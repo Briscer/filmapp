@@ -3,28 +3,19 @@
         <div class="search_input">
             <div class="search_input_wrapper">
                 <i class="iconfont icon-sousuo"></i>
-                <input type="text">
+                <input type="text" v-model="keyWord">
             </div>					
         </div>
         <div class="search_result">
-            <h3>电影/电视剧/综艺</h3>
+            <h3 v-if="msg">电影/电视剧/综艺</h3>
             <ul>
-                <li>
-                    <div class="img"><img src="/images/movie_1.jpg"></div>
+                <li v-for="i in movies" :key="i.id">
+                    <div class="img"><img :src="i.img | setWH('128.180')"></div>
                     <div class="info">
-                        <p><span>无名之辈</span><span>8.5</span></p>
-                        <p>A Cool Fish</p>
-                        <p>剧情,喜剧,犯罪</p>
-                        <p>2018-11-16</p>
-                    </div>
-                </li>
-                <li>
-                    <div class="img"><img src="/images/movie_1.jpg"></div>
-                    <div class="info">
-                        <p><span>无名之辈</span><span>8.5</span></p>
-                        <p>A Cool Fish</p>
-                        <p>剧情,喜剧,犯罪</p>
-                        <p>2018-11-16</p>
+                        <p><span>{{i.nm}}</span><span>{{ i.sc }}</span></p>
+                        <p>{{ i.enm }}</p>
+                        <p>{{ i.cat }}</p>
+                        <p>{{i.rt}}</p>
                     </div>
                 </li>
             </ul>
@@ -34,7 +25,51 @@
 
 <script>
 export default {
-    name: 'Search'
+    name: 'Search',
+    data(){
+        return {
+            keyWord: '',
+            movies: [],
+            cinemas: [],
+            msg : ''
+        }
+    },
+    methods:{
+        getSearchResult:function(kw){
+            this.axios.get("/api/searchList?cityId=10&kw=" + kw, {
+                cancelToken: new this.axios.CancelToken(c => {
+                    this.source = c;
+                })
+            }).then(res => {
+                let msg = res.data.msg;
+                if(msg === 'ok') {
+                    if(res.data.data){
+                        this.movies = res.data.data.movies.list;
+                        // this.cinemas = res.data.data.cinemas.list
+                    } else {
+                        this.msg = "未搜索到符合条件的结果"
+                    }
+                }
+            }).catch( err => {
+                if(this.axios.isCancel(err)){
+                    console.log('Request canceled', err.message);
+                }else {
+                    console.log(err);
+                }
+            })
+        },
+        cancelRequest(){
+            if(typeof this.source === 'function'){
+                this.source('中止请求')
+            }
+        }
+    },
+    watch: {
+        keyWord:function(val){
+            this.cancelRequest();
+            this.getSearchResult(val)
+        }
+    }
 }
 </script>
 
